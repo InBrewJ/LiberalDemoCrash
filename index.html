@@ -3,10 +3,11 @@
 <html>
 
 <head>
-<title>Learning WebGL &mdash; lesson 2</title>
+<title>Liberal DemoCrash</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <script type="text/javascript" src="js/glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="js/webgl-utils.js"></script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
@@ -117,11 +118,29 @@
 
 
     var mvMatrix = mat4.create();
+    var mvMatrixStack = [];
     var pMatrix = mat4.create();
+    
+    function mvPushMatrix() {
+        var copy = mat4.create();
+        mat4.set(mvMatrix, copy);
+        mvMatrixStack.push(copy);
+    }
+    
+    function mvPopMatrix() {
+        if (mvMatrixStack.length == 0) {
+            throw "Invalid popMatrix!";
+        }
+        mvMatrix = mvMatrixStack.pop();
+    }
 
     function setMatrixUniforms() {
         gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+    }
+    
+    function degToRad(degrees) {
+        return degrees * Math.PI / 180;
     }
 
     var vishVertexPositionBuffer;
@@ -183,6 +202,9 @@
     // does collision detection go in here?
     // and physics?
     // lol
+    
+    var rVish = 0;
+    var rTory = 0;
 
     function drawScene() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -195,6 +217,13 @@
         // for vish
 
         mat4.translate(mvMatrix, [0.0, 1.2, -7.0]);
+        
+        // pushing the model view matrix
+        mvPushMatrix();
+        
+        // rotating around -tive z
+        mat4.rotate(mvMatrix, degToRad(rVish), [0, 0, -1]);
+        
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vishVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
@@ -204,9 +233,17 @@
         setMatrixUniforms();
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, vishVertexPositionBuffer.numItems);
         
+        mvPopMatrix();
+        
         // for the "tory" square
 
         mat4.translate(mvMatrix, [0.0, -3.0, 0.0]);
+        
+        mvPushMatrix();
+        
+        // rotating around +tive z axis
+        mat4.rotate(mvMatrix, degToRad(rTory), [0, 0, 1]);
+        
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, toryVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
@@ -215,9 +252,30 @@
 
         setMatrixUniforms();
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, toryVertexPositionBuffer.numItems);
+        
+        mvPopMatrix();
+    }
+    
+    var lastTime = 0;
+    
+    function animate() {
+        var timeNow = new Date().getTime();
+        
+        if (lastTime != 0) {
+            var elapsed = timeNow - lastTime;
+            
+            rVish += (90 * elapsed) / 1000.0;
+            rTory += (25 * elapsed) / 1000.0;
+        }
+        lastTime = timeNow;
     }
 
-
+    function tick() {
+        requestAnimFrame(tick);
+        drawScene();
+        animate();
+    
+    }
 
     function webGLStart() {
         var canvas = document.getElementById("LiberalDemoCrash");
@@ -228,7 +286,7 @@
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
 
-        drawScene();
+        tick();
     }
 
 </script>
