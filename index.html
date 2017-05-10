@@ -9,7 +9,7 @@
 <script type="text/javascript" src="js/glMatrix-0.9.5.min.js"></script>
 <script type="text/javascript" src="js/webgl-utils.js"></script>
     
-<script id="shader-fs" type="x-shader/x-fragment">
+<script id="shader-fs-vish" type="x-shader/x-fragment">
     precision mediump float;
 
     // we want to color the tory cube
@@ -25,7 +25,7 @@
     }
 </script>
     
-<script id="shader-vs" type="x-shader/x-vertex">
+<script id="shader-vs-vish" type="x-shader/x-vertex">
     attribute vec2 aTextureCoord;   
     attribute vec3 aVertexPosition;    
     attribute vec4 aVertexColor;
@@ -39,6 +39,30 @@
     void main(void) {
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         vTextureCoord = aTextureCoord;
+    }
+</script>
+    
+<script id="shader-fs-tory" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_FragColor = vColor;
+    }
+</script>
+    
+<script id="shader-vs-tory" type="x-shader/x-vertex">  
+    attribute vec3 aVertexPosition;    
+    attribute vec4 aVertexColor;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         vColor = aVertexColor;
     }
 </script>
@@ -97,39 +121,67 @@
     }
 
 
-    var shaderProgram;
+    var shaderProgramVish;
+    var shaderProgramTory;
 
     function initShaders() {
-        var fragmentShader = getShader(gl, "shader-fs");
-        var vertexShader = getShader(gl, "shader-vs");
+        
+        // FOR VISH
+        
+        var fragmentShader = getShader(gl, "shader-fs-vish");
+        var vertexShader = getShader(gl, "shader-vs-vish");
 
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+        shaderProgramVish = gl.createProgram();
+        gl.attachShader(shaderProgramVish, vertexShader);
+        gl.attachShader(shaderProgramVish, fragmentShader);
+        gl.linkProgram(shaderProgramVish);
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        if (!gl.getProgramParameter(shaderProgramVish, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
 
-        gl.useProgram(shaderProgram);
+        gl.useProgram(shaderProgramVish);
 
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+        shaderProgramVish.vertexPositionAttribute = gl.getAttribLocation(shaderProgramVish, "aVertexPosition");
+        gl.enableVertexAttribArray(shaderProgramVish.vertexPositionAttribute);
         
         // For the vish cube
 
-        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord")
-        gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
-        
-        // For the tory box
-        
-        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
-        gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+        shaderProgramVish.textureCoordAttribute = gl.getAttribLocation(shaderProgramVish, "aTextureCoord")
+        gl.enableVertexAttribArray(shaderProgramVish.textureCoordAttribute);
 
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
+        shaderProgramVish.pMatrixUniform = gl.getUniformLocation(shaderProgramVish, "uPMatrix");
+        shaderProgramVish.mvMatrixUniform = gl.getUniformLocation(shaderProgramVish, "uMVMatrix");
+        shaderProgramVish.samplerUniform = gl.getUniformLocation(shaderProgramVish, "uSampler");
+        
+        // FOR TORY
+        
+        var fragmentShader = getShader(gl, "shader-fs-tory");
+        var vertexShader = getShader(gl, "shader-vs-tory");
+
+        shaderProgramTory = gl.createProgram();
+        gl.attachShader(shaderProgramTory, vertexShader);
+        gl.attachShader(shaderProgramTory, fragmentShader);
+        gl.linkProgram(shaderProgramTory);
+
+        if (!gl.getProgramParameter(shaderProgramTory, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        gl.useProgram(shaderProgramTory);
+
+        shaderProgramTory.vertexPositionAttribute = gl.getAttribLocation(shaderProgramTory, "aVertexPosition");
+        gl.enableVertexAttribArray(shaderProgramTory.vertexPositionAttribute);
+        
+        // For the tory cube
+
+        shaderProgramTory.vertexColorAttribute = gl.getAttribLocation(shaderProgramTory, "aVertexColor");
+        gl.enableVertexAttribArray(shaderProgramTory.vertexColorAttribute);
+
+        shaderProgramTory.pMatrixUniform = gl.getUniformLocation(shaderProgramTory, "uPMatrix");
+        shaderProgramTory.mvMatrixUniform = gl.getUniformLocation(shaderProgramTory, "uMVMatrix");
+        shaderProgramTory.samplerUniform = gl.getUniformLocation(shaderProgramTory, "uSampler");
+        
     }
     
     function handleLoadedTexture(texture) {
@@ -172,9 +224,14 @@
         mvMatrix = mvMatrixStack.pop();
     }
 
-    function setMatrixUniforms() {
-        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+    function setMatrixUniformsVish() {
+        gl.uniformMatrix4fv(shaderProgramVish.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgramVish.mvMatrixUniform, false, mvMatrix);
+    }
+    
+    function setMatrixUniformsTory() {
+        gl.uniformMatrix4fv(shaderProgramTory.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgramTory.mvMatrixUniform, false, mvMatrix);
     }
     
     function degToRad(degrees) {
@@ -409,23 +466,25 @@
         // rotating around up and right towards camera
         mat4.rotate(mvMatrix, degToRad(rVish), [1, 1, 1]);
         
+        gl.useProgram(shaderProgramVish);
+        
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vishVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(shaderProgramVish.vertexPositionAttribute, vishVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
         
         // Bind the texture coord buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexTextureCoordBuffer);
-        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, vishVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(shaderProgramVish.textureCoordAttribute, vishVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
         
         // Load the face texture
         // Again, we've lost the color code
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, vishTexture); 
-        gl.uniform1i(shaderProgram.samplerUniform, 0);
+        gl.uniform1i(shaderProgramVish.samplerUniform, 0);
         
         //console.log(vishVertexIndexBuffer);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vishVertexIndexBuffer);
-        setMatrixUniforms();
+        setMatrixUniformsVish();
         // for some reasion this gives a "drawElements: no buffer is bound to enabled attribute" - why?
         gl.drawElements(gl.TRIANGLES, vishVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
@@ -442,17 +501,19 @@
         // rotating around up and left towards camera
         mat4.rotate(mvMatrix, degToRad(rTory), [-1, 1, 1]);
         
+        // We don't want to draw textures anymore! 
+        // So we created an extra shader just to draw yellow...
+        
+        gl.useProgram(shaderProgramTory);
+        
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, toryVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(shaderProgramTory.vertexPositionAttribute, toryVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexColorBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, toryVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        
-        // We don't want to draw textures anymore!
-        // This is where I don't know what to do TROLOLOL
+        gl.vertexAttribPointer(shaderProgramTory.vertexColorAttribute, toryVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);    
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, toryVertexIndexBuffer);
-        setMatrixUniforms();
+        setMatrixUniformsTory();
         gl.drawElements(gl.TRIANGLES, toryVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
         
         mvPopMatrix();
