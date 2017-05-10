@@ -44,6 +44,7 @@
             gl.viewportWidth = canvas.width;
             gl.viewportHeight = canvas.height;
         } catch (e) {
+            alert("Caught an exception! Maybe exiting...");
         }
         if (!gl) {
             alert("Could not initialise WebGL, sorry :-(");
@@ -123,38 +124,15 @@
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
     }
 
-
-    var triangleVertexPositionBuffer;
-    var triangleVertexColorBuffer;
-    var squareVertexPositionBuffer;
-    var squareVertexColorBuffer;
-
+    var vishVertexPositionBuffer;
+    var vishVertexColorBuffer;
+    var toryVertexPositionBuffer;
+    var toryVertexColorBuffer;
+    
     function initBuffers() {
-        triangleVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
-        var vertices = [
-             0.0,  1.0,  0.0,
-            -1.0, -1.0,  0.0,
-             1.0, -1.0,  0.0
-        ];
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        triangleVertexPositionBuffer.itemSize = 3;
-        triangleVertexPositionBuffer.numItems = 3;
-
-        triangleVertexColorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
-        var colors = [
-            1.0, 0.0, 0.0, 1.0,
-            0.0, 1.0, 0.0, 1.0,
-            0.0, 0.0, 1.0, 1.0
-        ];
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-        triangleVertexColorBuffer.itemSize = 4;
-        triangleVertexColorBuffer.numItems = 3;
-
-
-        squareVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+        // for vish 
+        vishVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexPositionBuffer);
         vertices = [
              1.0,  1.0,  0.0,
             -1.0,  1.0,  0.0,
@@ -162,21 +140,49 @@
             -1.0, -1.0,  0.0
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        squareVertexPositionBuffer.itemSize = 3;
-        squareVertexPositionBuffer.numItems = 4;
+        vishVertexPositionBuffer.itemSize = 3;
+        vishVertexPositionBuffer.numItems = 4;
 
-        squareVertexColorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexColorBuffer);
+        vishVertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexColorBuffer);
         colors = [];
         for (var i=0; i < 4; i++) {
-            colors = colors.concat([0.5, 0.5, 1.0, 1.0]);
+            // yellow color for the lib dems
+            colors = colors.concat([1.0, 1.0, 0.01, 1.0]);
         }
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-        squareVertexColorBuffer.itemSize = 4;
-        squareVertexColorBuffer.numItems = 4;
+        vishVertexColorBuffer.itemSize = 4;
+        vishVertexColorBuffer.numItems = 4;
+
+
+        // for the "tory" square
+        toryVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexPositionBuffer);
+        vertices = [
+             0.5,  0.5,  0.0,
+            -0.5,  0.5,  0.0,
+             0.5, -0.5,  0.0,
+            -0.5, -0.5,  0.0
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        toryVertexPositionBuffer.itemSize = 3;
+        toryVertexPositionBuffer.numItems = 4;
+
+        toryVertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexColorBuffer);
+        colors = [];
+        for (var i=0; i < 4; i++) {
+            // blue for the "tory" 
+            colors = colors.concat([0.0, 0.0, 1.0, 1.0]);
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+        toryVertexColorBuffer.itemSize = 4;
+        toryVertexColorBuffer.numItems = 4;
     }
 
-
+    // does collision detection go in here?
+    // and physics?
+    // lol
 
     function drawScene() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -185,32 +191,36 @@
         mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
 
         mat4.identity(mvMatrix);
+        
+        // for vish
 
-        mat4.translate(mvMatrix, [-1.5, 0.0, -7.0]);
-        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        mat4.translate(mvMatrix, [0.0, 1.2, -7.0]);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vishVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, triangleVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        setMatrixUniforms();
-        gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
-
-        mat4.translate(mvMatrix, [3.0, 0.0, 0.0]);
-        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexColorBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, squareVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexColorBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, vishVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         setMatrixUniforms();
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, vishVertexPositionBuffer.numItems);
+        
+        // for the "tory" square
+
+        mat4.translate(mvMatrix, [0.0, -3.0, 0.0]);
+        gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, toryVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexColorBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, toryVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        setMatrixUniforms();
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, toryVertexPositionBuffer.numItems);
     }
 
 
 
     function webGLStart() {
-        var canvas = document.getElementById("lesson02-canvas");
+        var canvas = document.getElementById("LiberalDemoCrash");
         initGL(canvas);
         initShaders();
         initBuffers();
@@ -229,7 +239,7 @@
 
 <body onload="webGLStart();">
     
-    <canvas id="lesson02-canvas" style="border: none;" width="800" height="600"></canvas>
+    <canvas id="LiberalDemoCrash" style="border: none;" width="800" height="600"></canvas>
     
 </body>
 
