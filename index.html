@@ -8,32 +8,40 @@
 
 <script type="text/javascript" src="js/glMatrix-0.9.5.min.js"></script>
 <script type="text/javascript" src="js/webgl-utils.js"></script>
-
+    
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
 
+    // we want to color the tory cube
+    // AND apply the texture. Need
+    // To do some trickery with the GLSL
+    varying vec2 vTextureCoord;
     varying vec4 vColor;
 
+    uniform sampler2D uSampler;
+
     void main(void) {
-        gl_FragColor = vColor;
+        gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
     }
 </script>
-
+    
 <script id="shader-vs" type="x-shader/x-vertex">
-    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;   
+    attribute vec3 aVertexPosition;    
     attribute vec4 aVertexColor;
 
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
 
+    varying vec2 vTextureCoord;
     varying vec4 vColor;
 
     void main(void) {
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vTextureCoord = aTextureCoord;
         vColor = aVertexColor;
     }
 </script>
-
 
 <script type="text/javascript">
 
@@ -108,13 +116,43 @@
 
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
         gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+        
+        // For the vish cube
 
+        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord")
+        gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+        
+        // For the tory box
+        
         shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
         gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 
         shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
         shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
     }
+    
+    function handleLoadedTexture(texture) {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+        // gl.NEAREST will show image really blocky when close up,
+        // but it's really fast even on slow machines. Trade-offs everywhere, bro
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+    
+    var vishTexture;
+    function initTexture() {
+        vishTexture = gl.createTexture();
+        vishTexture.image = new Image();
+        vishTexture.image.onload = function() {
+        handleLoadedTexture(vishTexture)
+    }
+
+    vishTexture.image.src = "img/Vish.gif";
+  }
 
 
     var mvMatrix = mat4.create();
@@ -144,8 +182,9 @@
     }
 
     var vishVertexPositionBuffer;
-    var vishVertexColorBuffer;
+    var vishVertexTextureCoordBuffer;
     var vishVertexIndexBuffer;
+    
     var toryVertexPositionBuffer;
     var toryVertexColorBuffer;
     var toryVertexIndexBuffer;
@@ -189,34 +228,58 @@
             -1.0, -1.0, -1.0,
             -1.0, -1.0,  1.0,
             -1.0,  1.0,  1.0,
-            -1.0,  1.0, -1.0
+            -1.0,  1.0, -1.0,
         ];
+        
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         vishVertexPositionBuffer.itemSize = 3;
         vishVertexPositionBuffer.numItems = 24;
         
-        // Several shades of yellow for the vish cube
+        // No colours for the vish cube anymore - since we want his face
+        // on all sides
 
-        vishVertexColorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexColorBuffer);
-        colors = [
-            [1.0, 0.7, 0.1, 1.0],     // Front face
-            [1.0, 0.8, 0.2, 1.0],     // Back face
-            [1.0, 0.9, 0.3, 1.0],     // Top face
-            [1.0, 0.7, 0.4, 1.0],     // Bottom face
-            [1.0, 0.8, 0.5, 1.0],     // Right face
-            [1.0, 0.9, 0.6, 1.0],     // Left face
-          ];
-        var unpackedColors = [];
-        for (var i in colors) {
-          var color = colors[i];
-          for (var j=0; j < 4; j++) {
-            unpackedColors = unpackedColors.concat(color);
-          }
-        }
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(unpackedColors), gl.STATIC_DRAW);
-        vishVertexColorBuffer.itemSize = 4;
-        vishVertexColorBuffer.numItems = 24;
+        vishVertexTextureCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexTextureCoordBuffer);
+        var textureCoords = [
+          // Front face
+          0.0, 0.0,
+          1.0, 0.0,
+          1.0, 1.0,
+          0.0, 1.0,
+
+          // Back face
+          1.0, 0.0,
+          1.0, 1.0,
+          0.0, 1.0,
+          0.0, 0.0,
+
+          // Top face
+          0.0, 1.0,
+          0.0, 0.0,
+          1.0, 0.0,
+          1.0, 1.0,
+
+          // Bottom face
+          1.0, 1.0,
+          0.0, 1.0,
+          0.0, 0.0,
+          1.0, 0.0,
+
+          // Right face
+          1.0, 0.0,
+          1.0, 1.0,
+          0.0, 1.0,
+          0.0, 0.0,
+
+          // Left face
+          0.0, 0.0,
+          1.0, 0.0,
+          1.0, 1.0,
+          0.0, 1.0,
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
+        vishVertexTextureCoordBuffer.itemSize = 2;
+        vishVertexTextureCoordBuffer.numItems = 24;
         
         vishVertexIndexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vishVertexIndexBuffer);
@@ -232,7 +295,7 @@
         vishVertexIndexBuffer.itemSize = 1;
         vishVertexIndexBuffer.numItems = 36;
 
-
+        
         // for the "tory" cube
         toryVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexPositionBuffer);
@@ -318,6 +381,7 @@
         toryVertexIndexBuffer.itemSize = 1;
         toryVertexIndexBuffer.numItems = 36;
         
+        
     }
 
     // does collision detection go in here?
@@ -347,18 +411,29 @@
         
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vishVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexColorBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, vishVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        
+        // Bind the texture coord buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexTextureCoordBuffer);
+        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, vishVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        
+        // Load the face texture
+        // Again, we've lost the color code
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, vishTexture); 
+        gl.uniform1i(shaderProgram.samplerUniform, 0);
+        
+        //console.log(vishVertexIndexBuffer);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vishVertexIndexBuffer);
         setMatrixUniforms();
+        // for some reasion this gives a "drawElements: no buffer is bound to enabled attribute" - why?
         gl.drawElements(gl.TRIANGLES, vishVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
         
         mvPopMatrix();
         
         // for the "tory" square
+        // Draw it below Vish
 
         mat4.translate(mvMatrix, [0.0, -3.0, 0.0]);
         
@@ -372,6 +447,9 @@
 
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexColorBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, toryVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        
+        // We don't want to draw textures anymore!
+        
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, toryVertexIndexBuffer);
         setMatrixUniforms();
@@ -408,6 +486,9 @@
         initGL(canvas);
         initShaders();
         initBuffers();
+        initTexture();
+        
+        // Background color
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
