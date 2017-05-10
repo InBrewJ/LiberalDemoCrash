@@ -145,58 +145,179 @@
 
     var vishVertexPositionBuffer;
     var vishVertexColorBuffer;
+    var vishVertexIndexBuffer;
     var toryVertexPositionBuffer;
     var toryVertexColorBuffer;
+    var toryVertexIndexBuffer;
     
     function initBuffers() {
-        // for vish 
+        // for vish cube
         vishVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexPositionBuffer);
         vertices = [
-             1.0,  1.0,  0.0,
-            -1.0,  1.0,  0.0,
-             1.0, -1.0,  0.0,
-            -1.0, -1.0,  0.0
+            // Front face
+            -1.0, -1.0,  1.0,
+             1.0, -1.0,  1.0,
+             1.0,  1.0,  1.0,
+            -1.0,  1.0,  1.0,
+
+            // Back face
+            -1.0, -1.0, -1.0,
+            -1.0,  1.0, -1.0,
+             1.0,  1.0, -1.0,
+             1.0, -1.0, -1.0,
+
+            // Top face
+            -1.0,  1.0, -1.0,
+            -1.0,  1.0,  1.0,
+             1.0,  1.0,  1.0,
+             1.0,  1.0, -1.0,
+
+            // Bottom face
+            -1.0, -1.0, -1.0,
+             1.0, -1.0, -1.0,
+             1.0, -1.0,  1.0,
+            -1.0, -1.0,  1.0,
+
+            // Right face
+             1.0, -1.0, -1.0,
+             1.0,  1.0, -1.0,
+             1.0,  1.0,  1.0,
+             1.0, -1.0,  1.0,
+
+            // Left face
+            -1.0, -1.0, -1.0,
+            -1.0, -1.0,  1.0,
+            -1.0,  1.0,  1.0,
+            -1.0,  1.0, -1.0
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         vishVertexPositionBuffer.itemSize = 3;
-        vishVertexPositionBuffer.numItems = 4;
+        vishVertexPositionBuffer.numItems = 24;
+        
+        // Several shades of yellow for the vish cube
 
         vishVertexColorBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexColorBuffer);
-        colors = [];
-        for (var i=0; i < 4; i++) {
-            // yellow color for the lib dems
-            colors = colors.concat([1.0, 1.0, 0.01, 1.0]);
+        colors = [
+            [1.0, 0.7, 0.1, 1.0],     // Front face
+            [1.0, 0.8, 0.2, 1.0],     // Back face
+            [1.0, 0.9, 0.3, 1.0],     // Top face
+            [1.0, 0.7, 0.4, 1.0],     // Bottom face
+            [1.0, 0.8, 0.5, 1.0],     // Right face
+            [1.0, 0.9, 0.6, 1.0],     // Left face
+          ];
+        var unpackedColors = [];
+        for (var i in colors) {
+          var color = colors[i];
+          for (var j=0; j < 4; j++) {
+            unpackedColors = unpackedColors.concat(color);
+          }
         }
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(unpackedColors), gl.STATIC_DRAW);
         vishVertexColorBuffer.itemSize = 4;
-        vishVertexColorBuffer.numItems = 4;
+        vishVertexColorBuffer.numItems = 24;
+        
+        vishVertexIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vishVertexIndexBuffer);
+        var vishVertexIndices = [
+          0, 1, 2,      0, 2, 3,    // Front face
+          4, 5, 6,      4, 6, 7,    // Back face
+          8, 9, 10,     8, 10, 11,  // Top face
+          12, 13, 14,   12, 14, 15, // Bottom face
+          16, 17, 18,   16, 18, 19, // Right face
+          20, 21, 22,   20, 22, 23  // Left face
+        ]
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(vishVertexIndices), gl.STATIC_DRAW);
+        vishVertexIndexBuffer.itemSize = 1;
+        vishVertexIndexBuffer.numItems = 36;
 
 
-        // for the "tory" square
+        // for the "tory" cube
         toryVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexPositionBuffer);
+        
+        // vertices of a cube half the size of vish
+        // (TORIES ARE SMALLER IN HIS EYES)
+        
         vertices = [
-             0.5,  0.5,  0.0,
-            -0.5,  0.5,  0.0,
-             0.5, -0.5,  0.0,
-            -0.5, -0.5,  0.0
+            // Front face
+            -0.5, -0.5,  0.5,
+             0.5, -0.5,  0.5,
+             0.5,  0.5,  0.5,
+            -0.5,  0.5,  0.5,
+
+            // Back face
+            -0.5, -0.5, -0.5,
+            -0.5,  0.5, -0.5,
+             0.5,  0.5, -0.5,
+             0.5, -0.5, -0.5,
+
+            // Top face
+            -0.5,  0.5, -0.5,
+            -0.5,  0.5,  0.5,
+             0.5,  0.5,  0.5,
+             0.5,  0.5, -0.5,
+
+            // Bottom face
+            -0.5, -0.5, -0.5,
+             0.5, -0.5, -0.5,
+             0.5, -0.5,  0.5,
+            -0.5, -0.5,  0.5,
+
+            // Right face
+             0.5, -0.5, -0.5,
+             0.5,  0.5, -0.5,
+             0.5,  0.5,  0.5,
+             0.5, -0.5,  0.5,
+
+            // Left face
+            -0.5, -0.5, -0.5,
+            -0.5, -0.5,  0.5,
+            -0.5,  0.5,  0.5,
+            -0.5,  0.5, -0.5
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         toryVertexPositionBuffer.itemSize = 3;
-        toryVertexPositionBuffer.numItems = 4;
+        toryVertexPositionBuffer.numItems = 24;
+        
+        // Several shades of blue for the tory cube
 
         toryVertexColorBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexColorBuffer);
-        colors = [];
-        for (var i=0; i < 4; i++) {
-            // blue for the "tory" 
-            colors = colors.concat([0.0, 0.0, 1.0, 1.0]);
+        colors = [
+            [0.5, 0.1, 1.0, 1.0],     // Front face
+            [0.5, 0.2, 1.0, 1.0],     // Back face
+            [0.5, 0.3, 1.0, 1.0],     // Top face
+            [0.5, 0.4, 1.0, 1.0],     // Bottom face
+            [0.5, 0.5, 1.0, 1.0],     // Right face
+            [0.5, 0.6, 1.0, 1.0],     // Left face
+          ];
+        var unpackedColors = [];
+        for (var i in colors) {
+          var color = colors[i];
+          for (var j=0; j < 4; j++) {
+            unpackedColors = unpackedColors.concat(color);
+          }
         }
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(unpackedColors), gl.STATIC_DRAW);
         toryVertexColorBuffer.itemSize = 4;
-        toryVertexColorBuffer.numItems = 4;
+        toryVertexColorBuffer.numItems = 24;
+        
+        toryVertexIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, toryVertexIndexBuffer);
+        var toryVertexIndices = [
+          0, 1, 2,      0, 2, 3,    // Front face
+          4, 5, 6,      4, 6, 7,    // Back face
+          8, 9, 10,     8, 10, 11,  // Top face
+          12, 13, 14,   12, 14, 15, // Bottom face
+          16, 17, 18,   16, 18, 19, // Right face
+          20, 21, 22,   20, 22, 23  // Left face
+        ]
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(toryVertexIndices), gl.STATIC_DRAW);
+        toryVertexIndexBuffer.itemSize = 1;
+        toryVertexIndexBuffer.numItems = 36;
+        
     }
 
     // does collision detection go in here?
@@ -221,8 +342,8 @@
         // pushing the model view matrix
         mvPushMatrix();
         
-        // rotating around -tive z
-        mat4.rotate(mvMatrix, degToRad(rVish), [0, 0, -1]);
+        // rotating around up and right towards camera
+        mat4.rotate(mvMatrix, degToRad(rVish), [1, 1, 1]);
         
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vishVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -230,8 +351,10 @@
         gl.bindBuffer(gl.ARRAY_BUFFER, vishVertexColorBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, vishVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vishVertexIndexBuffer);
         setMatrixUniforms();
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, vishVertexPositionBuffer.numItems);
+        gl.drawElements(gl.TRIANGLES, vishVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
         
         mvPopMatrix();
         
@@ -241,8 +364,8 @@
         
         mvPushMatrix();
         
-        // rotating around +tive z axis
-        mat4.rotate(mvMatrix, degToRad(rTory), [0, 0, 1]);
+        // rotating around up and left towards camera
+        mat4.rotate(mvMatrix, degToRad(rTory), [-1, 1, 1]);
         
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, toryVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -250,8 +373,9 @@
         gl.bindBuffer(gl.ARRAY_BUFFER, toryVertexColorBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, toryVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, toryVertexIndexBuffer);
         setMatrixUniforms();
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, toryVertexPositionBuffer.numItems);
+        gl.drawElements(gl.TRIANGLES, toryVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
         
         mvPopMatrix();
     }
@@ -263,6 +387,8 @@
         
         if (lastTime != 0) {
             var elapsed = timeNow - lastTime;
+            
+            // presumably the 1000.0 is ms to make 1 second
             
             rVish += (90 * elapsed) / 1000.0;
             rTory += (25 * elapsed) / 1000.0;
