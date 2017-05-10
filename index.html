@@ -432,7 +432,7 @@
         
         mvPopMatrix();
         
-        // for the "tory" square
+        // for the "tory" cube
         // Draw it below Vish
 
         mat4.translate(mvMatrix, [0.0, -3.0, 0.0]);
@@ -449,7 +449,7 @@
         gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, toryVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
         
         // We don't want to draw textures anymore!
-        
+        // This is where I don't know what to do TROLOLOL
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, toryVertexIndexBuffer);
         setMatrixUniforms();
