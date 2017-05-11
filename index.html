@@ -564,7 +564,6 @@
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vishVertexIndexBuffer);
         setMatrixUniformsVish();
-        // for some reasion this gives a "drawElements: no buffer is bound to enabled attribute" - why?
         gl.drawElements(gl.TRIANGLES, vishVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
         
